@@ -1,0 +1,32 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Decky CLI
+        run: |
+          curl -L \
+            https://github.com/SteamDeckHomebrew/cli/releases/latest/download/decky-linux-x86_64 \
+            -o ./decky-cli
+          chmod +x ./decky-cli
+
+      - name: Build plugin
+        run: sudo ./decky-cli plugin build .
+
+      - name: Upload zip to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: out/*.zip
