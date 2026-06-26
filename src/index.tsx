@@ -161,13 +161,13 @@ function Content() {
   return (
     <PanelSection title="Screen Rotation">
       <PanelSectionRow>
-        <ButtonItem layout="below" disabled={displays.length <= 1} onClick={cycleDisplay}>
-          Display: {currentDisplayLabel}
+        <ButtonItem label="Display" disabled={displays.length <= 1} onClick={cycleDisplay}>
+          {currentDisplayLabel}
         </ButtonItem>
       </PanelSectionRow>
       <PanelSectionRow>
-        <ButtonItem layout="below" onClick={cycleOrientation}>
-          Orientation: {currentOrientationLabel}
+        <ButtonItem label="Orientation" onClick={cycleOrientation}>
+          {currentOrientationLabel}
         </ButtonItem>
       </PanelSectionRow>
       <PanelSectionRow>

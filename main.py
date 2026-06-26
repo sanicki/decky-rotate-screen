@@ -1,6 +1,7 @@
 import glob
 import os
 import re
+import shlex
 import subprocess
 
 import decky
@@ -36,7 +37,8 @@ class Plugin:
     async def get_displays(self) -> list:
         try:
             displays = []
-            for status_path in glob.glob("/sys/class/drm/*/status"):
+            external_count = 0
+            for status_path in sorted(glob.glob("/sys/class/drm/*/status")):
                 try:
                     with open(status_path) as f:
                         if f.read().strip() != "connected":
@@ -46,9 +48,10 @@ class Plugin:
                 dir_name = os.path.basename(os.path.dirname(status_path))
                 connector = re.sub(r"^card\d+-", "", dir_name)
                 if connector.startswith(BUILTIN_PREFIXES):
-                    label = f"{connector} (built-in display)"
+                    label = f"Built-in Display ({connector})"
                 else:
-                    label = connector
+                    external_count += 1
+                    label = f"External Display {external_count} ({connector})"
                 displays.append({"connector": connector, "label": label})
             return displays
         except Exception as e:
@@ -98,7 +101,21 @@ class Plugin:
                 return {"success": True, "error": None}
 
             decky.logger.info(f"Running: {' '.join(cmd)}")
-            subprocess.run(cmd, capture_output=True, text=True, check=True, env=_clean_env())
+
+            # rpm-ostree kargs (write) requires Polkit to see an active logind session.
+            # The plugin runs as root via the _root flag, but root launched from a
+            # systemd service has no active user session — Polkit denies the write.
+            # Running as the desktop user (DECKY_USER) satisfies the session check.
+            user = os.environ.get("DECKY_USER", "deck")
+            shell_cmd = " ".join(shlex.quote(a) for a in cmd)
+            proc = subprocess.run(
+                ["su", "-", user, "-c", shell_cmd],
+                capture_output=True, text=True, env=_clean_env()
+            )
+            if proc.returncode != 0:
+                decky.logger.error(f"set_orientation failed: {proc.stderr}")
+                return {"success": False, "error": proc.stderr or "rpm-ostree kargs failed"}
+
             return {"success": True, "error": None}
         except subprocess.CalledProcessError as e:
             decky.logger.error(f"set_orientation CalledProcessError: {e.stderr}")
