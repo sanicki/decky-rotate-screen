@@ -148,6 +148,7 @@ function Content() {
     <PanelSection title="Screen Rotation">
       <PanelSectionRow>
         <DropdownItem
+          key={selectedConnector}
           label="Display"
           rgOptions={displays.map((d) => ({ data: d.connector, label: d.label }))}
           selectedOption={selectedConnector}
@@ -156,6 +157,7 @@ function Content() {
       </PanelSectionRow>
       <PanelSectionRow>
         <DropdownItem
+          key={selectedOrientation}
           label="Orientation"
           rgOptions={ORIENTATION_OPTIONS}
           selectedOption={selectedOrientation}
