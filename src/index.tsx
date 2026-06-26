@@ -1,15 +1,17 @@
 import {
   ButtonItem,
   ConfirmModal,
-  DropdownItem,
+  Menu,
+  MenuItem,
   PanelSection,
   PanelSectionRow,
+  showContextMenu,
   showModal,
   staticClasses,
 } from "@decky/ui";
 import { callable, definePlugin } from "@decky/api";
 import { useEffect, useState } from "react";
-import { MdFlip, MdMonitor, MdRotateLeft, MdRotateRight, MdScreenRotation } from "react-icons/md";
+import { MdMonitor } from "react-icons/md";
 
 interface Display {
   connector: string;
@@ -27,10 +29,10 @@ const setOrientation = callable<[connector: string, orientation: string], SetOri
 const reboot = callable<[], void>("reboot");
 
 const ORIENTATION_OPTIONS = [
-  { data: "normal", label: <span><MdScreenRotation style={{ marginRight: 6 }} />Normal</span> },
-  { data: "left",   label: <span><MdRotateLeft style={{ marginRight: 6 }} />Rotated Left</span> },
-  { data: "right",  label: <span><MdRotateRight style={{ marginRight: 6 }} />Rotated Right</span> },
-  { data: "flip",   label: <span><MdFlip style={{ marginRight: 6 }} />Upside Down</span> },
+  { data: "normal", label: "Normal" },
+  { data: "left",   label: "Rotated Left" },
+  { data: "right",  label: "Rotated Right" },
+  { data: "flip",   label: "Upside Down" },
 ];
 
 function Content() {
@@ -144,25 +146,57 @@ function Content() {
     );
   }
 
+  const currentDisplayLabel = displays.find(d => d.connector === selectedConnector)?.label ?? selectedConnector ?? "";
+  const currentOrientationLabel = ORIENTATION_OPTIONS.find(o => o.data === selectedOrientation)?.label ?? selectedOrientation;
+
   return (
     <PanelSection title="Screen Rotation">
       <PanelSectionRow>
-        <DropdownItem
-          key={selectedConnector}
-          label="Display"
-          rgOptions={displays.map((d) => ({ data: d.connector, label: d.label }))}
-          selectedOption={selectedConnector}
-          onChange={(opt) => setSelectedConnector(opt.data)}
-        />
+        <ButtonItem
+          layout="below"
+          disabled={displays.length <= 1}
+          onClick={(e: MouseEvent) => {
+            showContextMenu(
+              <Menu label="Display" cancelText="Cancel" onCancel={() => {}}>
+                {displays.map((d) => (
+                  <MenuItem
+                    key={d.connector}
+                    selected={d.connector === selectedConnector}
+                    onSelected={() => setSelectedConnector(d.connector)}
+                  >
+                    {d.label}
+                  </MenuItem>
+                ))}
+              </Menu>,
+              e.currentTarget as EventTarget
+            );
+          }}
+        >
+          Display: {currentDisplayLabel}
+        </ButtonItem>
       </PanelSectionRow>
       <PanelSectionRow>
-        <DropdownItem
-          key={selectedOrientation}
-          label="Orientation"
-          rgOptions={ORIENTATION_OPTIONS}
-          selectedOption={selectedOrientation}
-          onChange={(opt) => setSelectedOrientation(opt.data)}
-        />
+        <ButtonItem
+          layout="below"
+          onClick={(e: MouseEvent) => {
+            showContextMenu(
+              <Menu label="Orientation" cancelText="Cancel" onCancel={() => {}}>
+                {ORIENTATION_OPTIONS.map((opt) => (
+                  <MenuItem
+                    key={opt.data}
+                    selected={opt.data === selectedOrientation}
+                    onSelected={() => setSelectedOrientation(opt.data)}
+                  >
+                    {opt.label}
+                  </MenuItem>
+                ))}
+              </Menu>,
+              e.currentTarget as EventTarget
+            );
+          }}
+        >
+          Orientation: {currentOrientationLabel}
+        </ButtonItem>
       </PanelSectionRow>
       <PanelSectionRow>
         <ButtonItem layout="below" onClick={handleApply} disabled={applying}>
