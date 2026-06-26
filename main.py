@@ -17,8 +17,17 @@ ORIENTATION_MAP = {
 REVERSE_ORIENTATION_MAP = {v: k for k, v in ORIENTATION_MAP.items() if v}
 
 
+def _clean_env() -> dict:
+    # PyInstaller (used by Decky) sets LD_LIBRARY_PATH to its temp dir and
+    # bundles its own OpenSSL libs. System binaries like rpm-ostree then load
+    # the wrong OpenSSL version. Stripping LD_LIBRARY_PATH fixes this.
+    env = os.environ.copy()
+    env.pop("LD_LIBRARY_PATH", None)
+    return env
+
+
 def _rpm_ostree_available() -> bool:
-    result = subprocess.run(["which", "rpm-ostree"], capture_output=True)
+    result = subprocess.run(["which", "rpm-ostree"], capture_output=True, env=_clean_env())
     return result.returncode == 0
 
 
@@ -52,7 +61,7 @@ class Plugin:
                 return "unsupported"
             result = subprocess.run(
                 ["rpm-ostree", "kargs"],
-                capture_output=True, text=True, check=True
+                capture_output=True, text=True, check=True, env=_clean_env()
             )
             pattern = rf"video={re.escape(connector)}:panel_orientation=(\w+)"
             match = re.search(pattern, result.stdout)
@@ -72,7 +81,7 @@ class Plugin:
 
             result = subprocess.run(
                 ["rpm-ostree", "kargs"],
-                capture_output=True, text=True, check=True
+                capture_output=True, text=True, check=True, env=_clean_env()
             )
 
             pattern = rf"video={re.escape(connector)}:panel_orientation=\S+"
@@ -89,7 +98,7 @@ class Plugin:
                 return {"success": True, "error": None}
 
             decky.logger.info(f"Running: {' '.join(cmd)}")
-            subprocess.run(cmd, capture_output=True, text=True, check=True)
+            subprocess.run(cmd, capture_output=True, text=True, check=True, env=_clean_env())
             return {"success": True, "error": None}
         except subprocess.CalledProcessError as e:
             decky.logger.error(f"set_orientation CalledProcessError: {e.stderr}")
@@ -100,7 +109,7 @@ class Plugin:
 
     async def reboot(self) -> None:
         try:
-            subprocess.run(["systemctl", "reboot"], check=True)
+            subprocess.run(["systemctl", "reboot"], check=True, env=_clean_env())
         except Exception as e:
             decky.logger.error(f"reboot error: {e}")
 
