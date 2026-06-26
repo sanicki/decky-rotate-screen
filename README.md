@@ -9,10 +9,28 @@ A [Decky Loader](https://github.com/SteamDeckHomebrew/decky-loader) plugin for r
 
 ## Installation
 
-Install via the Decky plugin store once published, or manually:
+Install via the Decky plugin store once published, or manually by following the steps below.
 
-1. Download the latest release zip from the [Releases](https://github.com/sanicki/decky-rotate-screen/releases) page.
-2. In Decky Loader, go to the store → Install from zip.
+### Manual installation
+
+1. **Download the plugin zip** from the [Releases](https://github.com/sanicki/decky-rotate-screen/releases) page. Click the release you want, then download the `.zip` file listed under **Assets**.
+
+2. **Transfer the zip to your Steam Deck.** A few options:
+   - Plug in a USB drive, copy the zip to it, then plug it into the Deck.
+   - Use a service like Google Drive, Dropbox, or a Discord DM to send the file to yourself and download it in Desktop Mode using the Firefox browser.
+   - If you know your Deck's IP address, copy it over the network with `scp` from another machine.
+
+3. **Switch to Desktop Mode** on your Steam Deck (Steam button → Power → Switch to Desktop).
+
+4. **Open Decky Loader** by clicking the `⚡` (lightning bolt) icon in the system tray at the bottom-right of the taskbar.
+
+5. **Open the Decky store** by clicking the shopping bag icon at the top of the Decky sidebar.
+
+6. **Install from zip:** click the package/box icon at the top-right of the store view (next to the search bar), then select the zip file you downloaded in step 1.
+
+7. **Return to Gaming Mode** (double-click the "Return to Gaming Mode" shortcut on the Desktop).
+
+The plugin will appear in the Quick Access Menu (`...` button) under the Decky plugins section.
 
 ## Usage
 
