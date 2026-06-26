@@ -17,14 +17,12 @@ The plugin needs `sudo` access to run `rpm-ostree kargs` and `systemctl reboot` 
 
 1. Switch to **Desktop Mode**.
 2. Open **Konsole** (or any terminal).
-3. Run the following command, replacing `your-username` with your actual Bazzite username:
+3. Run the following command:
 
 ```bash
-echo "your-username ALL=(root) NOPASSWD: /usr/bin/rpm-ostree kargs *
-your-username ALL=(root) NOPASSWD: /usr/bin/systemctl reboot" | sudo tee /etc/sudoers.d/decky-rotate-screen && sudo chmod 440 /etc/sudoers.d/decky-rotate-screen
+echo "$(whoami) ALL=(root) NOPASSWD: /usr/bin/rpm-ostree kargs *
+$(whoami) ALL=(root) NOPASSWD: /usr/bin/systemctl reboot" | sudo tee /etc/sudoers.d/decky-rotate-screen && sudo chmod 440 /etc/sudoers.d/decky-rotate-screen
 ```
-
-> **Note:** If you're not sure of your username, run `whoami` in the terminal first.
 
 You only need to do this once. If you skip this step, the plugin will display the exact command to run when you press **Apply**.
 
