@@ -13,24 +13,19 @@ Install via the Decky plugin store once published, or manually by following the 
 
 ### Manual installation
 
-1. **Download the plugin zip** from the [Releases](https://github.com/sanicki/decky-rotate-screen/releases) page. Click the release you want, then download the `.zip` file listed under **Assets**.
+This can be done entirely in Gaming Mode — no Desktop Mode required.
 
-2. **Transfer the zip to your Steam Deck.** A few options:
-   - Plug in a USB drive, copy the zip to it, then plug it into the Deck.
-   - Use a service like Google Drive, Dropbox, or a Discord DM to send the file to yourself and download it in Desktop Mode using the Firefox browser.
-   - If you know your Deck's IP address, copy it over the network with `scp` from another machine.
+1. **Copy the zip URL.** Go to the [Releases](https://github.com/sanicki/decky-rotate-screen/releases) page, click the latest release, right-click the `.zip` file under **Assets**, and copy the link address.
 
-3. **Switch to Desktop Mode** on your Steam Deck (Steam button → Power → Switch to Desktop).
+2. **Open the Quick Access Menu** on your Steam Deck by pressing the `...` (three-dot) button on the right side of the device.
 
-4. **Open Decky Loader** by clicking the `⚡` (lightning bolt) icon in the system tray at the bottom-right of the taskbar.
+3. **Open Decky settings** by clicking the plug icon at the bottom of the Quick Access Menu to enter the Decky section, then click the **gear icon** (⚙) at the top right.
 
-5. **Open the Decky store** by clicking the shopping bag icon at the top of the Decky sidebar.
+4. **Navigate to Developer settings** and select **Install Plugin from URL**.
 
-6. **Install from zip:** click the package/box icon at the top-right of the store view (next to the search bar), then select the zip file you downloaded in step 1.
+5. **Paste the zip URL** you copied in step 1 and confirm. Decky will download and install the plugin automatically.
 
-7. **Return to Gaming Mode** (double-click the "Return to Gaming Mode" shortcut on the Desktop).
-
-The plugin will appear in the Quick Access Menu (`...` button) under the Decky plugins section.
+The plugin will appear in the Quick Access Menu under the Decky plugins section.
 
 ## Usage
 
