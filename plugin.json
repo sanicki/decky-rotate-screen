@@ -1,7 +1,7 @@
 {
   "name": "DeckyRotateScreen",
   "author": "sanicki",
-  "flags": [],
+  "flags": ["_root"],
   "api_version": 1,
   "publish": {
     "tags": ["display", "rotation", "bazzite"],

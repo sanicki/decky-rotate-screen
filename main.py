@@ -16,6 +16,19 @@ ORIENTATION_MAP = {
 
 REVERSE_ORIENTATION_MAP = {v: k for k, v in ORIENTATION_MAP.items() if v}
 
+POLKIT_RULE_PATH = "/etc/polkit-1/rules.d/49-decky-rotate-screen.rules"
+
+# Pre-authorize rpm-ostree kargs operations for root and wheel-group users so
+# the plugin can call rpm-ostree without an interactive Polkit prompt.
+POLKIT_RULE = """\
+polkit.addRule(function(action, subject) {
+    if (action.id.indexOf("org.projectatomic.rpmostree1") === 0 &&
+            (subject.user === "root" || subject.isInGroup("wheel"))) {
+        return polkit.Result.YES;
+    }
+});
+"""
+
 
 def _clean_env() -> dict:
     # PyInstaller (used by Decky) sets LD_LIBRARY_PATH to its temp dir and
@@ -100,15 +113,7 @@ class Plugin:
                 return {"success": True, "error": None}
 
             decky.logger.info(f"Running: {' '.join(cmd)}")
-
-            # rpm-ostree kargs (write) requires Polkit authorization.
-            # The plugin process runs as the deck user (not root despite the _root flag).
-            # On Bazzite, deck has passwordless sudo, so sudo gives us the elevation
-            # needed for the write operation.
-            proc = subprocess.run(
-                ["sudo"] + cmd,
-                capture_output=True, text=True, env=_clean_env()
-            )
+            proc = subprocess.run(cmd, capture_output=True, text=True, env=_clean_env())
             if proc.returncode != 0:
                 decky.logger.error(f"set_orientation failed: {proc.stderr}")
                 return {"success": False, "error": proc.stderr or "rpm-ostree kargs failed"}
@@ -123,15 +128,27 @@ class Plugin:
 
     async def reboot(self) -> None:
         try:
-            subprocess.run(["sudo", "systemctl", "reboot"], check=True, env=_clean_env())
+            subprocess.run(["systemctl", "reboot"], check=True, env=_clean_env())
         except Exception as e:
             decky.logger.error(f"reboot error: {e}")
 
     async def _main(self):
-        decky.logger.info("decky-rotate-screen loaded")
+        decky.logger.info(f"decky-rotate-screen loaded (UID={os.geteuid()})")
+        try:
+            with open(POLKIT_RULE_PATH, "w") as f:
+                f.write(POLKIT_RULE)
+            subprocess.run(["systemctl", "reload", "polkit"], env=_clean_env())
+            decky.logger.info("Polkit rule installed")
+        except Exception as e:
+            decky.logger.warning(f"Could not install polkit rule: {e}")
 
     async def _unload(self):
         decky.logger.info("decky-rotate-screen unloaded")
 
     async def _uninstall(self):
+        try:
+            os.remove(POLKIT_RULE_PATH)
+            subprocess.run(["systemctl", "reload", "polkit"], env=_clean_env())
+        except Exception:
+            pass
         decky.logger.info("decky-rotate-screen uninstalled")
