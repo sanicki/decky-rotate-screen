@@ -45,17 +45,25 @@ function Content() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const disps = await getDisplays();
-      setDisplays(disps);
-      if (disps.length > 0) {
-        const first = disps[0].connector;
-        setSelectedConnector(first);
-        const orientation = await getCurrentOrientation(first);
-        if (orientation === "unsupported") {
-          setUnsupported(true);
-        } else {
-          setSelectedOrientation(orientation);
+      try {
+        const disps = await getDisplays();
+        setDisplays(disps);
+        if (disps.length > 0) {
+          const first = disps[0].connector;
+          setSelectedConnector(first);
+          try {
+            const orientation = await getCurrentOrientation(first);
+            if (orientation === "unsupported") {
+              setUnsupported(true);
+            } else {
+              setSelectedOrientation(orientation);
+            }
+          } catch (e) {
+            setErrorMsg(`Failed to read current orientation: ${e}`);
+          }
         }
+      } catch (e) {
+        setErrorMsg(`Failed to detect displays: ${e}`);
       }
       setLoading(false);
     })();
@@ -64,12 +72,16 @@ function Content() {
   useEffect(() => {
     if (!selectedConnector) return;
     (async () => {
-      const orientation = await getCurrentOrientation(selectedConnector);
-      if (orientation === "unsupported") {
-        setUnsupported(true);
-      } else {
-        setUnsupported(false);
-        setSelectedOrientation(orientation);
+      try {
+        const orientation = await getCurrentOrientation(selectedConnector);
+        if (orientation === "unsupported") {
+          setUnsupported(true);
+        } else {
+          setUnsupported(false);
+          setSelectedOrientation(orientation);
+        }
+      } catch (e) {
+        setErrorMsg(`Failed to read orientation: ${e}`);
       }
     })();
   }, [selectedConnector]);
@@ -78,21 +90,26 @@ function Content() {
     if (!selectedConnector) return;
     setApplying(true);
     setErrorMsg(null);
-    const result = await setOrientation(selectedConnector, selectedOrientation);
-    setApplying(false);
-    if (!result.success) {
-      setErrorMsg(result.error ?? "Unknown error");
-      return;
+    try {
+      const result = await setOrientation(selectedConnector, selectedOrientation);
+      setApplying(false);
+      if (!result.success) {
+        setErrorMsg(result.error ?? "Unknown error");
+        return;
+      }
+      showModal(
+        <ConfirmModal
+          strTitle="Reboot Required"
+          strDescription="Reboot now to apply the screen orientation change?"
+          strOKButtonLabel="Reboot Now"
+          strCancelButtonLabel="Later"
+          onOK={() => reboot()}
+        />
+      );
+    } catch (e) {
+      setApplying(false);
+      setErrorMsg(`Failed to apply: ${e}`);
     }
-    showModal(
-      <ConfirmModal
-        strTitle="Reboot Required"
-        strDescription="Reboot now to apply the screen orientation change?"
-        strOKButtonLabel="Reboot Now"
-        strCancelButtonLabel="Later"
-        onOK={() => reboot()}
-      />
-    );
   };
 
   if (loading) {
