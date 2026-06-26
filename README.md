@@ -15,19 +15,20 @@ Install via the Decky plugin store once published, or manually by following the 
 
 This can be done entirely in Gaming Mode — no Desktop Mode required.
 
-1. **Get the zip URL.** On a phone or computer, go to the [Releases](https://github.com/sanicki/decky-rotate-screen/releases) page, click the latest release, and copy the URL of the `.zip` file listed under **Assets**. It will look like:
-   ```
-   https://github.com/sanicki/decky-rotate-screen/releases/download/v<version>/decky-rotate-screen.zip
-   ```
-   Keep this URL handy — you'll need to type or paste it on your Deck in the next steps.
+1. **Enable Developer Mode in Decky** (one-time setup). Open the Quick Access Menu (`...` button), navigate to the Decky section, open **Settings** (gear icon ⚙), and enable **Developer Mode**. This unlocks the manual install options used in the steps below.
 
-2. **Open the Quick Access Menu** on your Steam Deck by pressing the `...` (three-dot) button on the right side of the device.
+2. **In Decky Settings, go to the Developer section.** You will see two options for installing a plugin manually — choose whichever suits you:
 
-3. **Open Decky settings** by clicking the plug icon at the bottom of the Quick Access Menu to enter the Decky section, then click the **gear icon** (⚙) at the top right.
+   **Option A — Install from URL** (no file download needed):
+   - On a phone or computer, go to the [Releases](https://github.com/sanicki/decky-rotate-screen/releases) page, click the latest release, and copy the URL of the `.zip` file under **Assets**. It will look like:
+     ```
+     https://github.com/sanicki/decky-rotate-screen/releases/download/v<version>/decky-rotate-screen.zip
+     ```
+   - Select **Install Plugin from URL** in Decky, enter the URL, and confirm. Decky will download and install the plugin automatically.
 
-4. **Navigate to Developer settings** and select **Install Plugin from URL**.
-
-5. **Enter the zip URL** from step 1 and confirm. Decky will download and install the plugin automatically.
+   **Option B — Install from zip** (if you have the file on your Deck):
+   - Download the `.zip` from the [Releases](https://github.com/sanicki/decky-rotate-screen/releases) page and transfer it to your Steam Deck (e.g. via USB drive or cloud storage).
+   - Select **Install Plugin from ZIP** in Decky and browse to the downloaded file.
 
 The plugin will appear in the Quick Access Menu under the Decky plugins section.
 
