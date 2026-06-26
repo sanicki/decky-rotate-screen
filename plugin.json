@@ -1,11 +1,10 @@
 {
-  "name": "Example Plugin",
-  "author": "John Doe",
-  "flags": ["debug", "_root"],
+  "name": "decky-rotate-screen",
+  "author": "sanicki",
+  "flags": ["_root"],
   "api_version": 1,
   "publish": {
-    "tags": ["template", "root"],
-    "description": "Decky example plugin.",
-    "image": "https://opengraph.githubassets.com/1/SteamDeckHomebrew/PluginLoader"
+    "tags": ["display", "rotation", "bazzite"],
+    "description": "Rotate your display orientation on Bazzite via rpm-ostree kernel arguments."
   }
 }
