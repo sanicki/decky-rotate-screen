@@ -1,11 +1,8 @@
 import {
   ButtonItem,
   ConfirmModal,
-  Menu,
-  MenuItem,
   PanelSection,
   PanelSectionRow,
-  showContextMenu,
   showModal,
   staticClasses,
 } from "@decky/ui";
@@ -146,53 +143,30 @@ function Content() {
     );
   }
 
-  const currentDisplayLabel = displays.find(d => d.connector === selectedConnector)?.label ?? selectedConnector ?? "";
-  const currentOrientationLabel = ORIENTATION_OPTIONS.find(o => o.data === selectedOrientation)?.label ?? selectedOrientation;
+  const displayIdx = displays.findIndex(d => d.connector === selectedConnector);
+  const currentDisplayLabel = displays[displayIdx]?.label ?? selectedConnector ?? "";
+  const orientationIdx = ORIENTATION_OPTIONS.findIndex(o => o.data === selectedOrientation);
+  const currentOrientationLabel = ORIENTATION_OPTIONS[orientationIdx]?.label ?? selectedOrientation;
+
+  const cycleDisplay = () => {
+    const next = displays[(displayIdx + 1) % displays.length];
+    setSelectedConnector(next.connector);
+  };
+
+  const cycleOrientation = () => {
+    const next = ORIENTATION_OPTIONS[(orientationIdx + 1) % ORIENTATION_OPTIONS.length];
+    setSelectedOrientation(next.data);
+  };
 
   return (
     <PanelSection title="Screen Rotation">
       <PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          disabled={displays.length <= 1}
-          onClick={(e: MouseEvent) => {
-            showContextMenu(
-              <Menu label="Display" cancelText="Cancel" onCancel={() => {}}>
-                {displays.map((d) => (
-                  <MenuItem
-                    key={d.connector}
-                    onClick={() => setSelectedConnector(d.connector)}
-                  >
-                    {d.connector === selectedConnector ? `✓ ${d.label}` : d.label}
-                  </MenuItem>
-                ))}
-              </Menu>,
-              e.currentTarget as EventTarget
-            );
-          }}
-        >
+        <ButtonItem layout="below" disabled={displays.length <= 1} onClick={cycleDisplay}>
           Display: {currentDisplayLabel}
         </ButtonItem>
       </PanelSectionRow>
       <PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          onClick={(e: MouseEvent) => {
-            showContextMenu(
-              <Menu label="Orientation" cancelText="Cancel" onCancel={() => {}}>
-                {ORIENTATION_OPTIONS.map((opt) => (
-                  <MenuItem
-                    key={opt.data}
-                    onClick={() => setSelectedOrientation(opt.data)}
-                  >
-                    {opt.data === selectedOrientation ? `✓ ${opt.label}` : opt.label}
-                  </MenuItem>
-                ))}
-              </Menu>,
-              e.currentTarget as EventTarget
-            );
-          }}
-        >
+        <ButtonItem layout="below" onClick={cycleOrientation}>
           Orientation: {currentOrientationLabel}
         </ButtonItem>
       </PanelSectionRow>
