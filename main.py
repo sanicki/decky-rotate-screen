@@ -16,18 +16,18 @@ ORIENTATION_MAP = {
 
 REVERSE_ORIENTATION_MAP = {v: k for k, v in ORIENTATION_MAP.items() if v}
 
-POLKIT_RULE_PATH = "/etc/polkit-1/rules.d/49-decky-rotate-screen.rules"
+SUDOERS_PATH = "/etc/sudoers.d/decky-rotate-screen"
+# Scoped NOPASSWD rules — only the two operations this plugin needs.
+SUDOERS_CONTENT = (
+    "deck ALL=(root) NOPASSWD: /usr/bin/rpm-ostree kargs *\n"
+    "deck ALL=(root) NOPASSWD: /usr/bin/systemctl reboot\n"
+)
 
-# Pre-authorize rpm-ostree kargs operations for root and wheel-group users so
-# the plugin can call rpm-ostree without an interactive Polkit prompt.
-POLKIT_RULE = """\
-polkit.addRule(function(action, subject) {
-    if (action.id.indexOf("org.projectatomic.rpmostree1") === 0 &&
-            (subject.user === "root" || subject.isInGroup("wheel"))) {
-        return polkit.Result.YES;
-    }
-});
-"""
+SETUP_MSG = (
+    "One-time setup required. In Desktop Mode, open Konsole and run:\n"
+    f"echo '{SUDOERS_CONTENT.strip()}' | sudo tee {SUDOERS_PATH} "
+    f"&& sudo chmod 440 {SUDOERS_PATH}"
+)
 
 
 def _clean_env() -> dict:
@@ -112,11 +112,18 @@ class Plugin:
             if not existing and kernel_value is None:
                 return {"success": True, "error": None}
 
-            decky.logger.info(f"Running: {' '.join(cmd)}")
-            proc = subprocess.run(["pkexec"] + cmd, capture_output=True, text=True, env=_clean_env())
+            decky.logger.info(f"Running (UID={os.geteuid()}): {' '.join(cmd)}")
+            proc = subprocess.run(
+                ["sudo", "-n"] + cmd,
+                capture_output=True, text=True, env=_clean_env()
+            )
             if proc.returncode != 0:
-                decky.logger.error(f"set_orientation failed: {proc.stderr}")
-                return {"success": False, "error": proc.stderr or "rpm-ostree kargs failed"}
+                err = proc.stderr.strip()
+                decky.logger.error(f"set_orientation failed (UID={os.geteuid()}): {err}")
+                # Sudo not configured — guide user through one-time setup
+                if not err or "password" in err.lower() or "sudoers" in err.lower() or "not allowed" in err.lower():
+                    return {"success": False, "error": SETUP_MSG}
+                return {"success": False, "error": err}
 
             return {"success": True, "error": None}
         except subprocess.CalledProcessError as e:
@@ -128,27 +135,35 @@ class Plugin:
 
     async def reboot(self) -> None:
         try:
-            subprocess.run(["pkexec", "systemctl", "reboot"], check=True, env=_clean_env())
+            subprocess.run(
+                ["sudo", "-n", "systemctl", "reboot"],
+                check=True, env=_clean_env()
+            )
         except Exception as e:
             decky.logger.error(f"reboot error: {e}")
 
     async def _main(self):
-        decky.logger.info(f"decky-rotate-screen loaded (UID={os.geteuid()})")
-        try:
-            with open(POLKIT_RULE_PATH, "w") as f:
-                f.write(POLKIT_RULE)
-            subprocess.run(["systemctl", "reload", "polkit"], env=_clean_env())
-            decky.logger.info("Polkit rule installed")
-        except Exception as e:
-            decky.logger.warning(f"Could not install polkit rule: {e}")
+        uid = os.geteuid()
+        decky.logger.info(f"decky-rotate-screen loaded (UID={uid})")
+        if uid == 0:
+            try:
+                with open(SUDOERS_PATH, "w") as f:
+                    f.write(SUDOERS_CONTENT)
+                os.chmod(SUDOERS_PATH, 0o440)
+                decky.logger.info(f"Sudoers rule installed at {SUDOERS_PATH}")
+            except Exception as e:
+                decky.logger.warning(f"Could not install sudoers rule: {e}")
+        else:
+            decky.logger.warning(
+                f"_root flag ineffective (UID={uid}) — sudoers rule not installed automatically"
+            )
 
     async def _unload(self):
         decky.logger.info("decky-rotate-screen unloaded")
 
     async def _uninstall(self):
         try:
-            os.remove(POLKIT_RULE_PATH)
-            subprocess.run(["systemctl", "reload", "polkit"], env=_clean_env())
+            os.remove(SUDOERS_PATH)
         except Exception:
             pass
         decky.logger.info("decky-rotate-screen uninstalled")
