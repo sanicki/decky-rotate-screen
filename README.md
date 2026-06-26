@@ -11,9 +11,26 @@ A [Decky Loader](https://github.com/SteamDeckHomebrew/decky-loader) plugin for r
 
 Install via the Decky plugin store once published, or manually by following the steps below.
 
+### One-time permission setup (required)
+
+The plugin needs `sudo` access to run `rpm-ostree kargs` and `systemctl reboot` without a password prompt. This is a one-time step done in Desktop Mode.
+
+1. Switch to **Desktop Mode**.
+2. Open **Konsole** (or any terminal).
+3. Run the following command, replacing `your-username` with your actual Bazzite username:
+
+```bash
+echo "your-username ALL=(root) NOPASSWD: /usr/bin/rpm-ostree kargs *
+your-username ALL=(root) NOPASSWD: /usr/bin/systemctl reboot" | sudo tee /etc/sudoers.d/decky-rotate-screen && sudo chmod 440 /etc/sudoers.d/decky-rotate-screen
+```
+
+> **Note:** If you're not sure of your username, run `whoami` in the terminal first.
+
+You only need to do this once. If you skip this step, the plugin will display the exact command to run when you press **Apply**.
+
 ### Manual installation
 
-This can be done entirely in Gaming Mode — no Desktop Mode required.
+This can be done entirely in Gaming Mode — no Desktop Mode required for the plugin install itself.
 
 1. **Enable Developer Mode in Decky** (one-time setup). Open the Quick Access Menu (`...` button), navigate to the Decky section, open **Settings** (gear icon ⚙), and enable **Developer Mode**. This unlocks the manual install options used in the steps below.
 
