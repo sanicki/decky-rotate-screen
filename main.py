@@ -113,7 +113,7 @@ class Plugin:
                 return {"success": True, "error": None}
 
             decky.logger.info(f"Running: {' '.join(cmd)}")
-            proc = subprocess.run(cmd, capture_output=True, text=True, env=_clean_env())
+            proc = subprocess.run(["pkexec"] + cmd, capture_output=True, text=True, env=_clean_env())
             if proc.returncode != 0:
                 decky.logger.error(f"set_orientation failed: {proc.stderr}")
                 return {"success": False, "error": proc.stderr or "rpm-ostree kargs failed"}
@@ -128,7 +128,7 @@ class Plugin:
 
     async def reboot(self) -> None:
         try:
-            subprocess.run(["systemctl", "reboot"], check=True, env=_clean_env())
+            subprocess.run(["pkexec", "systemctl", "reboot"], check=True, env=_clean_env())
         except Exception as e:
             decky.logger.error(f"reboot error: {e}")
 
