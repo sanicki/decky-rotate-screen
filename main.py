@@ -17,17 +17,28 @@ ORIENTATION_MAP = {
 REVERSE_ORIENTATION_MAP = {v: k for k, v in ORIENTATION_MAP.items() if v}
 
 SUDOERS_PATH = "/etc/sudoers.d/decky-rotate-screen"
-# Scoped NOPASSWD rules — only the two operations this plugin needs.
-SUDOERS_CONTENT = (
-    "deck ALL=(root) NOPASSWD: /usr/bin/rpm-ostree kargs *\n"
-    "deck ALL=(root) NOPASSWD: /usr/bin/systemctl reboot\n"
-)
 
-SETUP_MSG = (
-    "One-time setup required. In Desktop Mode, open Konsole and run:\n"
-    f"echo '{SUDOERS_CONTENT.strip()}' | sudo tee {SUDOERS_PATH} "
-    f"&& sudo chmod 440 {SUDOERS_PATH}"
-)
+
+def _sudoers_content(username: str) -> str:
+    return (
+        f"{username} ALL=(root) NOPASSWD: /usr/bin/rpm-ostree kargs *\n"
+        f"{username} ALL=(root) NOPASSWD: /usr/bin/systemctl reboot\n"
+    )
+
+
+def _setup_msg(username: str) -> str:
+    content = _sudoers_content(username).strip()
+    return (
+        "One-time setup required. In Desktop Mode, open Konsole and run:\n"
+        f"echo '{content}' | sudo tee {SUDOERS_PATH} "
+        f"&& sudo chmod 440 {SUDOERS_PATH}"
+    )
+
+
+def _current_username() -> str:
+    # LOGNAME/USER reflect the logged-in user even when the process is
+    # spawned by a service running as a different UID.
+    return os.environ.get("LOGNAME") or os.environ.get("USER") or "deck"
 
 
 def _clean_env() -> dict:
@@ -122,7 +133,7 @@ class Plugin:
                 decky.logger.error(f"set_orientation failed (UID={os.geteuid()}): {err}")
                 # Sudo not configured — guide user through one-time setup
                 if not err or "password" in err.lower() or "sudoers" in err.lower() or "not allowed" in err.lower():
-                    return {"success": False, "error": SETUP_MSG}
+                    return {"success": False, "error": _setup_msg(_current_username())}
                 return {"success": False, "error": err}
 
             return {"success": True, "error": None}
@@ -147,10 +158,11 @@ class Plugin:
         decky.logger.info(f"decky-rotate-screen loaded (UID={uid})")
         if uid == 0:
             try:
+                username = _current_username()
                 with open(SUDOERS_PATH, "w") as f:
-                    f.write(SUDOERS_CONTENT)
+                    f.write(_sudoers_content(username))
                 os.chmod(SUDOERS_PATH, 0o440)
-                decky.logger.info(f"Sudoers rule installed at {SUDOERS_PATH}")
+                decky.logger.info(f"Sudoers rule installed for user '{username}' at {SUDOERS_PATH}")
             except Exception as e:
                 decky.logger.warning(f"Could not install sudoers rule: {e}")
         else:
