@@ -1,7 +1,6 @@
 import glob
 import os
 import re
-import shlex
 import subprocess
 
 import decky
@@ -102,14 +101,12 @@ class Plugin:
 
             decky.logger.info(f"Running: {' '.join(cmd)}")
 
-            # rpm-ostree kargs (write) requires Polkit to see an active logind session.
-            # The plugin runs as root via the _root flag, but root launched from a
-            # systemd service has no active user session — Polkit denies the write.
-            # Running as the desktop user (DECKY_USER) satisfies the session check.
-            user = os.environ.get("DECKY_USER", "deck")
-            shell_cmd = " ".join(shlex.quote(a) for a in cmd)
+            # rpm-ostree kargs (write) requires Polkit authorization.
+            # The plugin process runs as the deck user (not root despite the _root flag).
+            # On Bazzite, deck has passwordless sudo, so sudo gives us the elevation
+            # needed for the write operation.
             proc = subprocess.run(
-                ["runuser", "-l", user, "-c", shell_cmd],
+                ["sudo"] + cmd,
                 capture_output=True, text=True, env=_clean_env()
             )
             if proc.returncode != 0:
@@ -126,7 +123,7 @@ class Plugin:
 
     async def reboot(self) -> None:
         try:
-            subprocess.run(["systemctl", "reboot"], check=True, env=_clean_env())
+            subprocess.run(["sudo", "systemctl", "reboot"], check=True, env=_clean_env())
         except Exception as e:
             decky.logger.error(f"reboot error: {e}")
 
