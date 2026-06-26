@@ -1,6 +1,6 @@
 {
   "name": "decky-rotate-screen",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "Rotate screen orientation on Bazzite via rpm-ostree kargs",
   "type": "module",
   "scripts": {
