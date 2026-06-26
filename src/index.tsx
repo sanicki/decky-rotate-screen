@@ -161,10 +161,9 @@ function Content() {
                 {displays.map((d) => (
                   <MenuItem
                     key={d.connector}
-                    selected={d.connector === selectedConnector}
-                    onSelected={() => setSelectedConnector(d.connector)}
+                    onClick={() => setSelectedConnector(d.connector)}
                   >
-                    {d.label}
+                    {d.connector === selectedConnector ? `✓ ${d.label}` : d.label}
                   </MenuItem>
                 ))}
               </Menu>,
@@ -184,10 +183,9 @@ function Content() {
                 {ORIENTATION_OPTIONS.map((opt) => (
                   <MenuItem
                     key={opt.data}
-                    selected={opt.data === selectedOrientation}
-                    onSelected={() => setSelectedOrientation(opt.data)}
+                    onClick={() => setSelectedOrientation(opt.data)}
                   >
-                    {opt.label}
+                    {opt.data === selectedOrientation ? `✓ ${opt.label}` : opt.label}
                   </MenuItem>
                 ))}
               </Menu>,
