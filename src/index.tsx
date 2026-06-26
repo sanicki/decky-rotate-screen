@@ -1,115 +1,170 @@
 import {
   ButtonItem,
+  ConfirmModal,
+  DropdownItem,
   PanelSection,
   PanelSectionRow,
-  Navigation,
-  staticClasses
+  showModal,
+  staticClasses,
 } from "@decky/ui";
-import {
-  addEventListener,
-  removeEventListener,
-  callable,
-  definePlugin,
-  toaster,
-  // routerHook
-} from "@decky/api"
-import { useState } from "react";
-import { FaShip } from "react-icons/fa";
+import { callable, definePlugin } from "@decky/api";
+import { useEffect, useState } from "react";
+import { MdFlip, MdMonitor, MdRotateLeft, MdRotateRight, MdScreenRotation } from "react-icons/md";
 
-// import logo from "../assets/logo.png";
+interface Display {
+  connector: string;
+  label: string;
+}
 
-// This function calls the python function "add", which takes in two numbers and returns their sum (as a number)
-// Note the type annotations:
-//  the first one: [first: number, second: number] is for the arguments
-//  the second one: number is for the return value
-const add = callable<[first: number, second: number], number>("add");
+interface SetOrientationResult {
+  success: boolean;
+  error: string | null;
+}
 
-// This function calls the python function "start_timer", which takes in no arguments and returns nothing.
-// It starts a (python) timer which eventually emits the event 'timer_event'
-const startTimer = callable<[], void>("start_timer");
+const getDisplays = callable<[], Display[]>("get_displays");
+const getCurrentOrientation = callable<[connector: string], string>("get_current_orientation");
+const setOrientation = callable<[connector: string, orientation: string], SetOrientationResult>("set_orientation");
+const reboot = callable<[], void>("reboot");
+
+const ORIENTATION_OPTIONS = [
+  { data: "normal", label: <span><MdScreenRotation style={{ marginRight: 6 }} />Normal</span> },
+  { data: "left",   label: <span><MdRotateLeft style={{ marginRight: 6 }} />Rotated Left</span> },
+  { data: "right",  label: <span><MdRotateRight style={{ marginRight: 6 }} />Rotated Right</span> },
+  { data: "flip",   label: <span><MdFlip style={{ marginRight: 6 }} />Upside Down</span> },
+];
 
 function Content() {
-  const [result, setResult] = useState<number | undefined>();
+  const [displays, setDisplays] = useState<Display[]>([]);
+  const [selectedConnector, setSelectedConnector] = useState<string | null>(null);
+  const [selectedOrientation, setSelectedOrientation] = useState<string>("normal");
+  const [loading, setLoading] = useState(true);
+  const [applying, setApplying] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [unsupported, setUnsupported] = useState(false);
 
-  const onClick = async () => {
-    const result = await add(Math.random(), Math.random());
-    setResult(result);
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      const disps = await getDisplays();
+      setDisplays(disps);
+      if (disps.length > 0) {
+        const first = disps[0].connector;
+        setSelectedConnector(first);
+        const orientation = await getCurrentOrientation(first);
+        if (orientation === "unsupported") {
+          setUnsupported(true);
+        } else {
+          setSelectedOrientation(orientation);
+        }
+      }
+      setLoading(false);
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedConnector) return;
+    (async () => {
+      const orientation = await getCurrentOrientation(selectedConnector);
+      if (orientation === "unsupported") {
+        setUnsupported(true);
+      } else {
+        setUnsupported(false);
+        setSelectedOrientation(orientation);
+      }
+    })();
+  }, [selectedConnector]);
+
+  const handleApply = async () => {
+    if (!selectedConnector) return;
+    setApplying(true);
+    setErrorMsg(null);
+    const result = await setOrientation(selectedConnector, selectedOrientation);
+    setApplying(false);
+    if (!result.success) {
+      setErrorMsg(result.error ?? "Unknown error");
+      return;
+    }
+    showModal(
+      <ConfirmModal
+        strTitle="Reboot Required"
+        strDescription="Reboot now to apply the screen orientation change?"
+        strOKButtonLabel="Reboot Now"
+        strCancelButtonLabel="Later"
+        onOK={() => reboot()}
+      />
+    );
   };
 
+  if (loading) {
+    return (
+      <PanelSection title="Screen Rotation">
+        <PanelSectionRow>
+          <span>Loading displays...</span>
+        </PanelSectionRow>
+      </PanelSection>
+    );
+  }
+
+  if (unsupported) {
+    return (
+      <PanelSection title="Screen Rotation">
+        <PanelSectionRow>
+          <span style={{ color: "#f4a261" }}>
+            This plugin requires Bazzite or another rpm-ostree-based system.
+          </span>
+        </PanelSectionRow>
+      </PanelSection>
+    );
+  }
+
+  if (displays.length === 0) {
+    return (
+      <PanelSection title="Screen Rotation">
+        <PanelSectionRow>
+          <span>No connected displays detected.</span>
+        </PanelSectionRow>
+      </PanelSection>
+    );
+  }
+
   return (
-    <PanelSection title="Panel Section">
+    <PanelSection title="Screen Rotation">
       <PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          onClick={onClick}
-        >
-          {result ?? "Add two numbers via Python"}
-        </ButtonItem>
+        <DropdownItem
+          label="Display"
+          rgOptions={displays.map((d) => ({ data: d.connector, label: d.label }))}
+          selectedOption={selectedConnector}
+          onChange={(opt) => setSelectedConnector(opt.data)}
+        />
       </PanelSectionRow>
       <PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          onClick={() => startTimer()}
-        >
-          {"Start Python timer"}
+        <DropdownItem
+          label="Orientation"
+          rgOptions={ORIENTATION_OPTIONS}
+          selectedOption={selectedOrientation}
+          onChange={(opt) => setSelectedOrientation(opt.data)}
+        />
+      </PanelSectionRow>
+      <PanelSectionRow>
+        <ButtonItem layout="below" onClick={handleApply} disabled={applying}>
+          {applying ? "Applying..." : "Apply"}
         </ButtonItem>
       </PanelSectionRow>
-
-      {/* <PanelSectionRow>
-        <div style={{ display: "flex", justifyContent: "center" }}>
-          <img src={logo} />
-        </div>
-      </PanelSectionRow> */}
-
-      {/*<PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          onClick={() => {
-            Navigation.Navigate("/decky-plugin-test");
-            Navigation.CloseSideMenus();
-          }}
-        >
-          Router
-        </ButtonItem>
-      </PanelSectionRow>*/}
+      {errorMsg && (
+        <PanelSectionRow>
+          <span style={{ color: "#e63946" }}>{errorMsg}</span>
+        </PanelSectionRow>
+      )}
     </PanelSection>
   );
-};
+}
 
 export default definePlugin(() => {
-  console.log("Template plugin initializing, this is called once on frontend startup")
-
-  // serverApi.routerHook.addRoute("/decky-plugin-test", DeckyPluginRouterTest, {
-  //   exact: true,
-  // });
-
-  // Add an event listener to the "timer_event" event from the backend
-  const listener = addEventListener<[
-    test1: string,
-    test2: boolean,
-    test3: number
-  ]>("timer_event", (test1, test2, test3) => {
-    console.log("Template got timer_event with:", test1, test2, test3)
-    toaster.toast({
-      title: "template got timer_event",
-      body: `${test1}, ${test2}, ${test3}`
-    });
-  });
-
   return {
-    // The name shown in various decky menus
-    name: "Test Plugin",
-    // The element displayed at the top of your plugin's menu
-    titleView: <div className={staticClasses.Title}>Decky Example Plugin</div>,
-    // The content of your plugin's menu
+    name: "decky-rotate-screen",
+    titleView: <div className={staticClasses.Title}>Rotate Screen</div>,
     content: <Content />,
-    // The icon displayed in the plugin list
-    icon: <FaShip />,
-    // The function triggered when your plugin unloads
-    onDismount() {
-      console.log("Unloading")
-      removeEventListener("timer_event", listener);
-      // serverApi.routerHook.removeRoute("/decky-plugin-test");
-    },
+    icon: <MdMonitor />,
+    onDismount() {},
   };
 });
