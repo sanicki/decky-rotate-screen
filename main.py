@@ -109,7 +109,7 @@ class Plugin:
             user = os.environ.get("DECKY_USER", "deck")
             shell_cmd = " ".join(shlex.quote(a) for a in cmd)
             proc = subprocess.run(
-                ["su", "-", user, "-c", shell_cmd],
+                ["runuser", "-l", user, "-c", shell_cmd],
                 capture_output=True, text=True, env=_clean_env()
             )
             if proc.returncode != 0:
